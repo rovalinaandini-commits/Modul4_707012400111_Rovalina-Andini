@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/pengajuan_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../cubit/favorit_cubit.dart';
 import '../navigation/app_routes.dart';
+import '../cubit/pengajuan_cubit.dart';
 
 class WargaPage extends StatelessWidget {
   const WargaPage({super.key});
   @override
   Widget build(BuildContext context) {
-    final pengajuan = context.watch<PengajuanModel>().daftarPengajuan;
+    final pengajuan = context.watch<PengajuanCubit>().state;
     return Scaffold(
       body: ListView(padding: const EdgeInsets.all(20), children: [
         const Text('Warga', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
@@ -22,25 +23,96 @@ class WargaPage extends StatelessWidget {
           ])),
         ])),
         const SizedBox(height: 22),
-        Row(children: [
-          Expanded(child: _stat('Total Pengajuan', '${pengajuan.length}', Icons.assignment_outlined)),
-          const SizedBox(width: 12),
-          Expanded(child: _stat('Selesai', '${pengajuan.where((e) => e.selesai).length}', Icons.check_circle_outline)),
-        ]),
+Row(
+  children: [
+    Expanded(
+      child: _stat(
+        'Total Pengajuan',
+        '${context.watch<PengajuanCubit>().totalPengajuan}',
+        Icons.assignment_outlined,
+      ),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+      child: _stat(
+        'Layanan Favorit',
+        '${context.watch<FavoritCubit>().state.length}',
+        Icons.star_outline,
+      ),
+    ),
+  ],
+),
         const SizedBox(height: 24),
+        const Text(
+  'Layanan Favorit',
+  style: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+  ),
+),
+const SizedBox(height: 12),
+
+BlocBuilder<FavoritCubit, Set<String>>(
+  builder: (context, daftarFavorit) {
+    if (daftarFavorit.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text('Belum ada layanan favorit.'),
+        ),
+      );
+    }
+
+    return Column(
+      children: daftarFavorit.map((namaLayanan) {
+        return Card(
+          child: ListTile(
+            leading: const Icon(
+              Icons.star,
+              color: Colors.amber,
+            ),
+            title: Text(namaLayanan),
+            trailing: const Icon(
+              Icons.favorite,
+              color: Colors.red,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  },
+),
+
+const SizedBox(height: 24),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Pengajuan Terbaru', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           TextButton(onPressed: () => Navigator.pushNamed(context, AppRoutes.riwayatLaporan), child: const Text('Lihat semua')),
         ]),
-        if (pengajuan.isEmpty)
-          const Card(child: Padding(padding: EdgeInsets.all(22), child: Center(child: Text('Belum ada pengajuan. Tekan tombol + untuk membuat pengajuan baru.'))))
-        else
-          ...pengajuan.take(3).map((p) => Card(child: ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.assignment)),
-            title: Text(p.bidang), subtitle: Text('${p.nama} • Sesi ${p.sesi}'),
-            trailing: Icon(p.selesai ? Icons.check_circle : Icons.hourglass_top, color: p.selesai ? Colors.green : Colors.orange),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.riwayatLaporan),
-          ))),
+ if (pengajuan.isEmpty)
+  const Card(
+    child: Padding(
+      padding: EdgeInsets.all(22),
+      child: Center(
+        child: Text('Belum ada pengajuan.'),
+      ),
+    ),
+  )
+else
+  ...pengajuan.take(3).map(
+    (namaLayanan) => Card(
+      child: ListTile(
+        leading: const CircleAvatar(
+          child: Icon(Icons.assignment),
+        ),
+        title: Text(namaLayanan),
+        subtitle: const Text('Pengajuan layanan'),
+        trailing: const Icon(
+          Icons.hourglass_top,
+          color: Colors.orange,
+        ),
+      ),
+    ),
+  ),
         const SizedBox(height: 20),
         _menu(context, Icons.chat_outlined, 'Tanya Petugas', AppRoutes.tanyaPetugas),
         _menu(context, Icons.map_outlined, 'Lokasi Kantor', AppRoutes.lokasiKantor),

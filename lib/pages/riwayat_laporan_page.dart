@@ -1,42 +1,120 @@
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/pengajuan_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../cubit/pengajuan_cubit.dart';
 import '../navigation/app_routes.dart';
 
 class RiwayatLaporanPage extends StatelessWidget {
   const RiwayatLaporanPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<PengajuanModel>();
-    final data = model.daftarPengajuan;
     return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat Pengajuan')),
-      body: data.isEmpty
-        ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Belum ada riwayat pengajuan. Tekan tombol + untuk membuat pengajuan baru.', textAlign: TextAlign.center)))
-        : ListView.builder(
-          padding: const EdgeInsets.all(16), itemCount: data.length,
-          itemBuilder: (context, i) {
-            final p = data[i];
-            return GestureDetector(
-              onTap: () => showDialog(context: context, builder: (_) => AlertDialog(
-                title: Text(p.bidang), content: Text('Nama: ${p.nama}\nEmail: ${p.email}\nSesi: ${p.sesi}\nStatus: ${p.selesai ? "Selesai ditindaklanjuti" : "Menunggu tindak lanjut"}'),
-                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-              )),
-              onLongPress: () {
-                model.tandaiSelesai(p.id);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengajuan ditandai selesai ditindaklanjuti.')));
-              },
-              child: Card(margin: const EdgeInsets.only(bottom: 12), child: ListTile(
-                leading: CircleAvatar(backgroundColor: p.selesai ? Colors.green.shade50 : Colors.orange.shade50, child: Icon(p.selesai ? Icons.check_circle : Icons.assignment_outlined, color: p.selesai ? Colors.green : Colors.orange)),
-                title: Text(p.bidang, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('${p.nama} • ${p.email}\nSesi ${p.sesi} • ${p.tanggal.day}/${p.tanggal.month}/${p.tanggal.year}\nTekan lama untuk tandai selesai'),
-                isThreeLine: true,
-                trailing: Icon(p.selesai ? Icons.verified : Icons.pending_actions, color: p.selesai ? Colors.green : Colors.orange),
-              )),
+      appBar: AppBar(
+        title: const Text('Riwayat Pengajuan'),
+      ),
+
+      body: BlocBuilder<PengajuanCubit, List<String>>(
+        builder: (context, data) {
+          if (data.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada riwayat pengajuan. '
+                  'Tekan tombol + untuk membuat pengajuan baru.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             );
-          },
-        ),
-      floatingActionButton: FloatingActionButton(onPressed: () => Navigator.pushNamed(context, AppRoutes.detailLayanan), child: const Icon(Icons.add)),
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: data.length,
+            itemBuilder: (context, i) {
+              final namaLayanan = data[i];
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.orange.shade50,
+                    child: const Icon(
+                      Icons.assignment_outlined,
+                      color: Colors.orange,
+                    ),
+                  ),
+
+                  title: Text(
+                    namaLayanan,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  subtitle: Text(
+                    'Pengajuan ke-${i + 1}\n'
+                    'Status: Menunggu tindak lanjut',
+                  ),
+
+                  isThreeLine: true,
+
+                  trailing: const Icon(
+                    Icons.pending_actions,
+                    color: Colors.orange,
+                  ),
+
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) {
+                        return AlertDialog(
+                          title: const Text('Detail Pengajuan'),
+                          content: Text(
+                            'Layanan: $namaLayanan\n'
+                            'Nomor pengajuan: ${i + 1}\n'
+                            'Status: Menunggu tindak lanjut',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                              },
+                              child: const Text('Tutup'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+
+                  onLongPress: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Fitur penandaan selesai belum tersedia.',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.detailLayanan,
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
